@@ -5,7 +5,7 @@
                 <div class="card-header">Messages</div>
 
                 <div class="card-body p-0">
-                    <ul class="list-unstyled" style="height:300px; overflow-y:scroll;">
+                    <ul class="list-unstyled" style="height:300px; overflow-y:scroll;" v-chat-scroll="{always: false, smooth: true}">
                         <li class="p-2" v-for="(message, index) in messages" :key="index">
                             <strong>{{ message.user.name.toUpperCase() }}: </strong>
                             {{message.message}}
@@ -13,10 +13,10 @@
                     </ul>
                 </div>
 
-                <input @keyup.enter="sendMessage" v-model = "newMessage" type="text" name = "message" placeholder="Enter your message" class="form-control">
+                <input @keydown="sendTypingEvent" @keyup.enter="sendMessage" v-model = "newMessage" type="text" name = "message" placeholder="Enter your message" class="form-control">
             </div>
 
-            <span class="text-muted">User is typing...</span>
+            <span class="text-muted" v-if=" userTyping ">{{ capitalize(userTyping.name) }} is typing...</span>
         </div>
 
         <div class="col-md-4">
@@ -43,7 +43,9 @@
             return {
                 messages : [],
                 newMessage : '',
-                users: []
+                users: [],
+                userTyping: false,
+                typingTimer: false
             }
         },
 
@@ -62,6 +64,17 @@
                 })
                 .listen('MessageEvent', (event) =>{
                     this.messages.push(event.message)
+                })
+                .listenForWhisper('typing', user=>{
+                    this.userTyping = user;
+
+                    if(this.typingTimer){// If the timer has been set before, clear it out for it to be reset to 3 secs again
+                        clearTimeout(this.typingTimer)
+                    }
+                    // Show the user is typing for three secs, so if s/he doesnt type for another 3 secs, it goes off
+                    this.typingTimer = setTimeout(() =>{
+                        this.userTyping = false;
+                    }, 3000)
                 })
         },
 
@@ -95,6 +108,11 @@
 
             check(person){
                 return person.id == this.user.id ? this.capitalize('You') : this.capitalize(person.name) ;
+            },
+
+            sendTypingEvent(){
+                Echo.join('chat')
+                    .whisper('typing', this.user)//Send broadcast this to everyone on the chat channel
             }
         }
     }
