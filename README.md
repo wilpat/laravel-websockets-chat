@@ -1,5 +1,5 @@
-# laravel-websocket-chat
-Simple real time chat system with laravel websocket and vue.js
+# laravel-websockets-chat
+Simple real time chat system with laravel websockets and vue.js
 
 # Setting up
 
